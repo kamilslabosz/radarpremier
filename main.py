@@ -50,16 +50,13 @@ for item in tygodnie:
 email_body = ""
 
 index = 0
-#creating email body
 for key in premiery:
     email_body += f">>>>>>>>>{key}<<<<<<<<<\n"
-    #looping through every movie premiering at given day
     for x in range(len(premiery[key]['filmy'])):
         response = requests.get(url=f"{FILMWEB_URL}{premiery[key]['linki'][x-1]}")
         temp_soup = BeautifulSoup(response.text, "html.parser")
         opis = temp_soup.find("span", class_="descriptionSection__moreText")
         email_body += f"-----------{premiery[key]['filmy'][x-1]}-----------\n"
-        #trying to get longer description of the movie and getting shorter one if it fails
         try:
             email_body += f"{opis.getText().replace('  Więcej...','')}\n"
         except AttributeError:
@@ -67,9 +64,11 @@ for key in premiery:
                 opis = temp_soup.find("p", class_="descriptionSection__text")
                 email_body += f"{opis.getText().replace('  Więcej...', '')}\n"
             except AttributeError:
-                opis = temp_soup.find("span", itemprop="description")
-                email_body += f"{opis.getText()}\n"
-        #getting score or audience interest if theres no score
+                try:
+                    opis = temp_soup.find("span", itemprop="description")
+                    email_body += f"{opis.getText()}\n"
+                except AttributeError:
+                    email_body += f"Ten film nie ma jeszcze zarysu fabuły.\n"
         try:
             ocena = temp_soup.find("span", class_="filmRating__rateValue")
             email_body += f"Średnia ocen: {ocena.getText()} z"
@@ -83,7 +82,7 @@ for key in premiery:
 
 #sending email
 text_type = 'plain'
-with smtplib.SMTP("smtp.gmail.com", port=587) as connection:
+with smtplib.SMTP("smtp.mail.yahoo.com", port=587) as connection:
     connection.starttls()
     connection.login(user=my_email, password=password)
     text = f'Hej!\nObczaj filmy które premierują w tym miesiącu w kinach!\n\n{email_body}'
